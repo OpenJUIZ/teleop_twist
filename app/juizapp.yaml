@@ -1,0 +1,14 @@
+# .juizapp のマニフェスト(juiz docs/spec/app-package.md §4)。languages・targets・rust・files は juiz pack が書き足す
+format: 1
+name: teleop_twist
+version: 0.1.0
+kind: app
+description: "Teleoperation from a keyboard or a gamepad in the browser: publishes Twist2D on cmd_vel"
+license: MIT OR Apache-2.0
+homepage: https://github.com/OpenJUIZ/teleop_twist
+# C ABI の Rust プラグインなので、その ABI を読める juiz(0.2.4 以降)なら rustc は問わない
+juiz: ">=0.2.4"
+entry: app.conf
+# cmd_vel を受ける mobile_sim に IPC でつなぐ(先に juiz run mobile_sim で動かしておく)
+depends:
+  mobile_sim: ">=0.3.1, <0.4"

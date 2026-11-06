@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>teleop_twist</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>teleop_twist</h1>
+    <span id="connection" class="status">接続中…</span>
+  </header>
+  <main>
+    <section id="drive">
+      <canvas id="pad" width="260" height="260" aria-label="速度パッド"></canvas>
+      <p class="hint">パッドをドラッグ: 上下で前後、左右で旋回(離すと止まる)</p>
+      <button id="stop" type="button">停止 (Space)</button>
+      <p id="focus" class="warn" hidden>この画面をクリックすると、キーボードで操作できます</p>
+    </section>
+    <aside>
+      <h2>速度の倍率</h2>
+      <div class="scale">
+        <button id="scale_down" type="button" aria-label="倍率を下げる">−</button>
+        <input id="scale" type="range" min="0.1" max="1" step="0.1" value="0.5" aria-label="速度の倍率">
+        <button id="scale_up" type="button" aria-label="倍率を上げる">+</button>
+        <output id="scale_value">0.5</output>
+      </div>
+      <h2>出している速度(cmd_vel)</h2>
+      <dl id="state">
+        <dt>前後 vx</dt><dd><span id="s_vx">0.00</span> m/s</dd>
+        <dt>左右 vy</dt><dd><span id="s_vy">0.00</span> m/s</dd>
+        <dt>旋回 ω</dt><dd><span id="s_omega">0.00</span> rad/s</dd>
+        <dt>入力</dt><dd id="s_source">なし</dd>
+        <dt>最大速度</dt><dd id="s_max">-</dd>
+      </dl>
+      <h2>ゲームパッド</h2>
+      <p id="gamepad">つながっていません(ボタンを押すと認識します)</p>
+      <h2>操作</h2>
+      <table class="keys">
+        <tr><th>前進・後退</th><td>W / S、↑ / ↓</td><td>左スティック上下</td></tr>
+        <tr><th>左旋回・右旋回</th><td>A / D、← / →</td><td>左スティック左右</td></tr>
+        <tr><th>左右へ平行移動<br><small>(全方向移動のみ)</small></th><td>Q / E</td><td>右スティック左右</td></tr>
+        <tr><th>倍率を下げる・上げる</th><td>Z / X</td><td>LB / RB</td></tr>
+        <tr><th>停止</th><td>Space</td><td>スティックを離す</td></tr>
+      </table>
+    </aside>
+  </main>
+  <script src="teleop.js"></script>
+</body>
+</html>
