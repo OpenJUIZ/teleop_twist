@@ -6,3 +6,4 @@
 /node_modules
 /ui_test.png
 .DS_Store
+__pycache__/
