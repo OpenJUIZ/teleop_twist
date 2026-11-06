@@ -1,0 +1,17 @@
+[package]
+name = "teleop_twist"
+description = "juiz component of teleop_twist: send Twist2D on cmd_vel from a keyboard or a gamepad in the browser."
+version = "0.1.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/OpenJUIZ/teleop_twist"
+rust-version = "1.88"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+# Rust のプラグインは C ABI で読ませるが、パッケージの中のプラグインは同じ juiz_sdk にそろえる(mobile_sim と同じ版)
+juiz_sdk = "=0.2.4"
+juiz_std_types = "=0.2.4"

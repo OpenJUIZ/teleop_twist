@@ -1,0 +1,117 @@
+name: Release
+
+# ターゲットごとにプラグインをビルドし、.juizapp にまとめる。タグ v* では Releases に載せる。
+# プラグインは C ABI なので、rustc の版は問わない(juiz docs/spec/app-package.md §12.1)。
+# juiz の版は Cargo.toml の juiz_sdk から決めるので、juiz の新しい版に合わせるときは
+# Cargo.toml と app/juizapp.yaml の版を上げるだけでよい。
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  # 結合テストでつなぐ mobile_sim の版(app/juizapp.yaml の depends の範囲に入るもの)
+  MOBILE_SIM_VERSION: "0.3.3"
+
+jobs:
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      juiz: ${{ steps.v.outputs.juiz }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: v
+        run: |
+          juiz=$(sed -n 's/^juiz_sdk = "=\(.*\)"/\1/p' Cargo.toml)
+          echo "juiz $juiz"
+          echo "juiz=$juiz" >> "$GITHUB_OUTPUT"
+          grep -qx "juiz: \">=$juiz\"" app/juizapp.yaml || { echo "app/juizapp.yaml の juiz を \">=$juiz\" にしてください"; exit 1; }
+      - name: Check the tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          version=$(sed -n 's/^version: //p' app/juizapp.yaml)
+          [ "v$version" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME != app/juizapp.yaml version $version"; exit 1; }
+
+  plugin:
+    needs: versions
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Linux は古めの glibc でビルドする(新しい glibc にしか無い記号を使わないように)
+          - { target: x86_64-unknown-linux-gnu, os: ubuntu-22.04, lib: libteleop_twist.so }
+          - { target: aarch64-unknown-linux-gnu, os: ubuntu-22.04-arm, lib: libteleop_twist.so }
+          - { target: x86_64-apple-darwin, os: macos-15, lib: libteleop_twist.dylib }
+          - { target: aarch64-apple-darwin, os: macos-15, lib: libteleop_twist.dylib }
+          - { target: x86_64-pc-windows-msvc, os: windows-latest, lib: teleop_twist.dll }
+    runs-on: ${{ matrix.os }}
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+      - run: cargo build --release --target ${{ matrix.target }}
+      - name: Collect
+        shell: bash
+        run: |
+          mkdir -p "plugins/${{ matrix.target }}"
+          cp "target/${{ matrix.target }}/release/${{ matrix.lib }}" "plugins/${{ matrix.target }}/"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugin-${{ matrix.target }}
+          path: plugins
+
+  pack:
+    needs: [versions, plugin]
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: plugin-*
+          path: plugins
+          merge-multiple: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # 配布先と同じく pip の juiz-cli を使う(別の rustc でビルドした juiz でも読めることもここで確かめられる)
+      - run: pip install "juiz-cli==${{ needs.versions.outputs.juiz }}"
+      - run: scripts/pack.sh plugins dist
+      - name: Get mobile_sim
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release download "v$MOBILE_SIM_VERSION" -R OpenJUIZ/mobile_sim -p "*.juizapp" -D sim
+      # mobile_sim を juiz run で動かし、このパッケージを depends でつないで、ロボットが動くことを確かめる
+      - name: Test the package with juiz run
+        run: python3 scripts/integration_test.py --juizapp dist/*.juizapp --mobile-sim sim/*.juizapp
+      - uses: actions/upload-artifact@v4
+        with:
+          name: juizapp
+          path: dist/*.juizapp
+      - name: Publish to Releases
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        # GitHub の画面で Release を作ってタグを打ったときは、その Release に .juizapp を足す
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" dist/*.juizapp --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" dist/*.juizapp --title "$GITHUB_REF_NAME" --generate-notes \
+              --notes "juiz ${{ needs.versions.outputs.juiz }} で動きます: \`pip install juiz-cli==${{ needs.versions.outputs.juiz }}\` の後、\`juiz run $(basename dist/*.juizapp)\`"
+          fi

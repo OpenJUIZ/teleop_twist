@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt --all --check
+      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo test
+
+  integration:
+    # juiz で app/app.conf を起動し、HTTP と画面(Playwright)から確かめる。
+    # プラグインは C ABI なので、pip の juiz-cli(別の rustc でビルドした juiz)でそのまま読める
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install juiz
+        run: pip install "juiz-cli==$(sed -n 's/^juiz_sdk = "=\(.*\)"/\1/p' Cargo.toml)"
+      - run: scripts/dev_plugin.sh
+      - run: python3 scripts/integration_test.py
+      - name: UI test (Playwright)
+        run: |
+          npm install --no-save playwright@1
+          npx playwright install --with-deps chromium
+          cd app && (juiz -f app.conf -d > /tmp/juiz.log 2>&1 &) && cd ..
+          for i in $(seq 100); do curl -sf localhost:8002/api/container/list > /dev/null && break; sleep 0.2; done
+          node scripts/ui_test.js http://localhost:8002/ ui_test.png
+      - name: Upload UI screenshot
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui_test
+          path: ui_test.png
+          if-no-files-found: ignore
