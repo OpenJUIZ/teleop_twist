@@ -13,8 +13,9 @@ juiz run mobile_sim-<版>.juizapp       # 先に動かしておく(ipc://mobile_
 juiz run teleop_twist-<版>.juizapp     # 別の端末で。ブラウザで http://localhost:8002/ を開く
 ```
 
-- teleop_twist は `juizapp.yaml` の `depends`(`mobile_sim >=0.3.1, <0.4`)を見て、動いている mobile_sim の版を確かめてから IPC でつなぎます。mobile_sim が動いていないと起動しません。
+- teleop_twist は `juizapp.yaml` の `depends`(`mobile_sim >=0.3.1, <0.4`)を見て、動いている mobile_sim の版を確かめてから IPC でつなぎます。mobile_sim が動いていないと起動しません(juiz 0.3.0 からは、端末から起動していれば、その場で mobile_sim を別の窓で起動するか、つなぎ先を入力するかを選べます)。
 - 先に `juiz install mobile_sim-<版>.juizapp` で入れておくと、`juiz run mobile_sim` と名前で起動できます。
+- juiz 0.3.0 から、`juiz associate` を 1 回実行しておくと、`.juizapp` をダブルクリックで起動できます([アプリの配布 (.juizapp)](https://openjuiz.github.io/ja/guides/app-package/#ダブルクリックで起動する))。
 - [mapper_gmapping](https://github.com/OpenJUIZ/mapper_gmapping) も一緒に動かせば、このアプリで走らせながら地図を作れます(画面は http://localhost:8001/)。
 - Linux(x86_64・arm64)、macOS(Intel・Apple Silicon)、Windows(x86_64)のプラグインが入っています。プラグインは juiz の C ABI で作っているので、pip の `juiz-cli` でも `cargo install juiz_app` で入れた juiz でも動きます。
 
