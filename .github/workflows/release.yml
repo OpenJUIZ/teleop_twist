@@ -19,7 +19,7 @@ concurrency:
 env:
   CARGO_TERM_COLOR: always
   # 結合テストでつなぐ mobile_sim の版(app/juizapp.yaml の depends の範囲に入るもの)
-  MOBILE_SIM_VERSION: "0.3.3"
+  MOBILE_SIM_VERSION: "0.3.5"
 
 jobs:
   versions:
