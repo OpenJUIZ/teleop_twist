@@ -7,7 +7,7 @@
 [Releases](https://github.com/OpenJUIZ/teleop_twist/releases) から `teleop_twist-<版>.juizapp` を、[mobile_sim の Releases](https://github.com/OpenJUIZ/mobile_sim/releases) から 0.3 系の `mobile_sim-<版>.juizapp` を取ってきます。
 
 ```sh
-pip install juiz-cli==0.3.0
+pip install juiz-cli==0.3.2
 
 juiz run mobile_sim-<版>.juizapp       # 先に動かしておく(ipc://mobile_sim、http://localhost:8000/)
 juiz run teleop_twist-<版>.juizapp     # 別の端末で。ブラウザで http://localhost:8002/ を開く
@@ -88,12 +88,12 @@ cargo build   # target/debug/libteleop_twist.so などができる
 cargo test
 ```
 
-Rust 1.89 以降が要ります。juiz_sdk は `=0.3.0` に固定しています。
+Rust 1.89 以降が要ります。juiz_sdk は `=0.3.2` に固定しています。
 
 ### juiz で動かす
 
 ```sh
-pip install juiz-cli==0.3.0
+pip install juiz-cli==0.3.2
 scripts/dev_plugin.sh                 # プラグインをビルドして app/plugins/<target>/ に置く
 cd app && juiz -f app.conf -d         # http://localhost:8002/ で画面が開く(mobile_sim にはつながない)
 python3 scripts/integration_test.py   # 別の端末で。juiz を起動して HTTP から各プロセスを呼ぶ
