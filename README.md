@@ -60,6 +60,16 @@ HTTP のポートは 8002 です(mobile_sim が 8000、mapper_gmapping が 8001)
 juiz run teleop_twist-<版>.juizapp --depend mobile_sim=http://192.168.0.10:8000
 ```
 
+juiz 0.3.7 からは、別の機械の mobile_sim を `--advertise` 付きで起動しておけば、`--depend` を書かなくても LAN で見つけてつなぎます(この機械に mobile_sim が動いていないときだけ。[ネーミングサービス](https://openjuiz.github.io/ja/guides/naming/#lan-の自動発見mdns))。pip の `juiz-cli` にはこの機能が入っています。
+
+```sh
+juiz run mobile_sim-<版>.juizapp --advertise      # mobile_sim の機械で
+juiz run teleop_twist-<版>.juizapp                # 操作する機械で
+# using mobile_sim at http://192.168.0.10:8000 (found in the name list)
+```
+
+マルチキャストが届かない網(Docker の bridge、一部の Wi-Fi、サブネット越え)では見つかりません。そのときは `--depend` で指定します。
+
 ## 中身
 
 コンテナ `teleop_twist`(インスタンス `teleop0`)の ContainerProcess:
